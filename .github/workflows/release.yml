@@ -48,6 +48,8 @@ jobs:
       id-token: write
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    outputs:
+      version: ${{ steps.release.outputs.version }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -92,3 +94,47 @@ jobs:
           VERSION: ${{ steps.release.outputs.version }}
           TAG: ${{ steps.release.outputs.tag }}
         run: scripts/publish-appcast.sh dmgs
+
+  bump-cask:
+    needs: release
+    runs-on: macos-26
+    env:
+      GH_TOKEN: ${{ secrets.HOMEBREW_TAP_PAT }}
+      VERSION: ${{ needs.release.outputs.version }}
+    steps:
+      - name: Compute DMG sha256
+        id: hash
+        run: |
+          URL="https://github.com/thdxg/macterm/releases/download/v${VERSION}/Macterm-${VERSION}.dmg"
+          curl -fsSL "$URL" -o macterm.dmg
+          echo "sha256=$(shasum -a 256 macterm.dmg | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout tap
+        uses: actions/checkout@v6
+        with:
+          repository: thdxg/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_PAT }}
+          path: tap
+
+      - name: Open PR bumping cask
+        working-directory: tap
+        run: |
+          sed -i '' -E "s/^( *version )\".*\"/\1\"${VERSION}\"/" Casks/macterm.rb
+          sed -i '' -E "s/^( *sha256 )\".*\"/\1\"${{ steps.hash.outputs.sha256 }}\"/" Casks/macterm.rb
+          if git diff --quiet Casks/macterm.rb; then
+            echo "No changes — cask already at ${VERSION}."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          BRANCH="bump-macterm-${VERSION}"
+          git checkout -b "$BRANCH"
+          git add Casks/macterm.rb
+          git commit -m "macterm ${VERSION}"
+          git push -u origin "$BRANCH"
+          gh pr create \
+            --repo thdxg/homebrew-tap \
+            --title "macterm ${VERSION}" \
+            --body  "Automated bump from [thdxg/macterm](https://github.com/thdxg/macterm) release v${VERSION}." \
+            --head  "$BRANCH" \
+            --base  main

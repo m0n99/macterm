@@ -21,6 +21,16 @@
 
 ## Install
 
+### Homebrew
+
+```bash
+brew install --cask thdxg/tap/macterm
+```
+
+The cask strips the Gatekeeper quarantine xattr on install, so the app launches without any extra prompts. Updates are delivered via Sparkle inside the app.
+
+### From Releases
+
 Download the latest `.dmg` from [Releases](https://github.com/thdxg/macterm/releases), open it, and drag Macterm to Applications.
 
 Since the app isn't signed with an Apple Developer certificate, macOS will block it on first launch with a "_Macterm.app Not Opened_" dialog. Dismiss the dialog, then:
