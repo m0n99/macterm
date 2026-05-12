@@ -144,7 +144,7 @@ final class GhosttyTerminalNSView: NSView {
         // fire when the window moves between displays of different DPI. Listen
         // on the window directly so the surface picks up the new scale even
         // when AppKit doesn't propagate the call to every layer-backed subview.
-        let handler: (Notification) -> Void = { [weak self] _ in
+        let handler: @Sendable (Notification) -> Void = { [weak self] _ in
             MainActor.assumeIsolated { self?.updateMetalLayerSize() }
         }
         let backing = NotificationCenter.default.addObserver(
