@@ -348,5 +348,12 @@ private struct QuickTerminalView: View {
         )
         .id(renderedNode.id)
         .background(Color(nsColor: GhosttyApp.shared.backgroundColor))
+        .overlay(alignment: .topTrailing) {
+            if state.tab.zoomedPaneID != nil {
+                ZoomIndicator()
+                    .padding(8)
+                    .transition(.opacity)
+            }
+        }
     }
 }

@@ -206,7 +206,38 @@ struct WorkspaceView: View {
                 onClosePane: { appState.requestClosePane($0, projectID: project.id) }
             )
             .id(renderedNode.id)
+            .overlay(alignment: .topTrailing) {
+                if tab.zoomedPaneID != nil {
+                    ZoomIndicator()
+                        .padding(8)
+                        .transition(.opacity)
+                }
+            }
         }
+    }
+}
+
+/// Small badge shown in the corner of a tab while one of its panes is zoomed.
+/// Hidden when nothing is zoomed.
+struct ZoomIndicator: View {
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "arrow.up.left.and.arrow.down.right")
+            Text("Zoomed")
+        }
+        .font(.system(size: 11, weight: .medium))
+        .foregroundStyle(MactermTheme.fg)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(MactermTheme.surface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .stroke(MactermTheme.border, lineWidth: 1)
+                )
+        )
+        .allowsHitTesting(false)
     }
 }
 
