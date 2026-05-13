@@ -29,7 +29,7 @@ struct SidebarContent: View {
                         SidebarTabRow(tab: tab) {
                             appState.closeTab(tab.id, projectID: project.id)
                         } onRename: { newName in
-                            tab.customTitle = newName
+                            tab.customTitle = newName.isEmpty ? nil : newName
                             appState.saveWorkspaces()
                         }
                         .tag(SidebarItem.tab(projectID: project.id, tabID: tab.id))
@@ -196,13 +196,15 @@ private struct SidebarTabRow: View {
     private var isRenaming = false
     @State
     private var renameText = ""
+    @State
+    private var preEditCustomTitle: String? = nil
     @FocusState
     private var focused: Bool
 
     var body: some View {
         Label {
             if isRenaming {
-                TextField("", text: $renameText)
+                TextField(tab.sidebarTitle, text: $renameText)
                     .textFieldStyle(.plain)
                     .focused($focused)
                     .onSubmit { commit() }
@@ -226,14 +228,18 @@ private struct SidebarTabRow: View {
 
     private func beginRename() {
         appState.renamingTabID = nil
-        renameText = tab.customTitle ?? tab.sidebarTitle
+        preEditCustomTitle = tab.customTitle
+        renameText = tab.customTitle ?? ""
         isRenaming = true
         focused = true
     }
 
     private func commit() {
         let text = renameText.trimmingCharacters(in: .whitespaces)
-        if !text.isEmpty { onRename(text) }
+        let newCustomTitle: String? = text.isEmpty ? nil : text
+        if newCustomTitle != preEditCustomTitle {
+            onRename(text)
+        }
         isRenaming = false
         appState.restoreFocusToActivePane()
     }
