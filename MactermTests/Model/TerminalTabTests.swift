@@ -228,7 +228,7 @@ struct TerminalTabTests {
     }
 
     @Test
-    func autoTitle_joins_multiple_pane_titles_with_separator() throws {
+    func autoTitle_joins_multiple_pane_titles_with_separator() {
         let (tab, _) = makeTab(H(pane("a"), pane("b")))
         // Both panes have the same processTitle in a test environment, so we
         // just verify the separator is present and autoTitle has two segments.
