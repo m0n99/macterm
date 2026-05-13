@@ -143,6 +143,7 @@ private struct SidebarProjectRow: View {
                     .focused($focused)
                     .onSubmit { commit() }
                     .onExitCommand { cancelRename() }
+                    .onAppear { focused = true }
             } else {
                 Text(project.name)
                     .lineLimit(1)
@@ -170,7 +171,6 @@ private struct SidebarProjectRow: View {
         appState.renamingProjectID = nil
         renameText = project.name
         isRenaming = true
-        focused = true
     }
 
     private func commit() {
@@ -209,6 +209,7 @@ private struct SidebarTabRow: View {
                     .focused($focused)
                     .onSubmit { commit() }
                     .onExitCommand { cancelRename() }
+                    .onAppear { focused = true }
             } else {
                 Text(tab.sidebarTitle)
                     .lineLimit(1)
@@ -231,7 +232,6 @@ private struct SidebarTabRow: View {
         preEditCustomTitle = tab.customTitle
         renameText = tab.customTitle ?? ""
         isRenaming = true
-        focused = true
     }
 
     private func commit() {

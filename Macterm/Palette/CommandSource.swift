@@ -62,7 +62,10 @@ struct CommandSource: PaletteSource {
             guard let projectID,
                   let tab = ctx.appState.workspaces[projectID]?.activeTab else { return nil }
             let tabID = tab.id
-            action = { ctx.appState.postPaletteAction = { ctx.appState.renamingTabID = tabID } }
+            action = { ctx.appState.postPaletteAction = {
+                ctx.appState.sidebarVisible = true
+                ctx.appState.renamingTabID = tabID
+            }}
         case .splitRight:
             guard let projectID else { return nil }
             action = { ctx.appState.splitPane(direction: .horizontal, projectID: projectID) }
@@ -99,7 +102,10 @@ struct CommandSource: PaletteSource {
         case .renameProject:
             guard let current else { return nil }
             let projectID = current.id
-            action = { ctx.appState.postPaletteAction = { ctx.appState.renamingProjectID = projectID } }
+            action = { ctx.appState.postPaletteAction = {
+                ctx.appState.sidebarVisible = true
+                ctx.appState.renamingProjectID = projectID
+            }}
         case .removeProject:
             guard let projectID else { return nil }
             action = {
