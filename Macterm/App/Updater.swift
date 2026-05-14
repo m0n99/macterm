@@ -16,7 +16,8 @@ final class Updater: ObservableObject {
     static let shared = Updater()
 
     private let controller: SPUStandardUpdaterController
-    private let delegate = UpdaterDelegate()
+    private let updaterDelegate = UpdaterDelegate()
+    private let userDriverDelegate = UserDriverDelegate()
 
     /// Exposes `canCheckForUpdates` for menu/UI disabled state.
     @Published var canCheckForUpdates = false
@@ -28,32 +29,47 @@ final class Updater: ObservableObject {
     private var cancellable: AnyCancellable?
 
     private init() {
-        let delegate = delegate
         // In debug builds Sparkle can't verify the unsigned dev binary against
         // the production EdDSA key, so it pops an "Unable to Check For
         // Updates" dialog on every launch. Start the controller without
         // kicking off update checks; release builds still auto-check.
+        //
+        // To exercise scheduled-check behavior locally (e.g. validating the
+        // gentle-reminder code path), set MACTERM_DEBUG_UPDATER=1 in the
+        // environment when running. Expect a Sparkle EdDSA error popup on
+        // first check — close it; subsequent checks land on the same code
+        // path the production user-driver path uses.
         let startUpdater: Bool = {
             #if DEBUG
-            return false
+            return ProcessInfo.processInfo.environment["MACTERM_DEBUG_UPDATER"] == "1"
             #else
             return true
             #endif
         }()
+        let updaterDelegate = updaterDelegate
+        let userDriverDelegate = userDriverDelegate
         controller = SPUStandardUpdaterController(
             startingUpdater: startUpdater,
-            updaterDelegate: delegate,
-            userDriverDelegate: nil
+            updaterDelegate: updaterDelegate,
+            userDriverDelegate: userDriverDelegate
         )
         cancellable = controller.updater.publisher(for: \.canCheckForUpdates)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.canCheckForUpdates = $0 }
-        delegate.onUpdateFound = { [weak self] in
-            self?.updateAvailable = true
+        #if DEBUG
+        if startUpdater {
+            // 60s scheduled checks for local validation; release builds keep
+            // Sparkle's default daily cadence.
+            controller.updater.updateCheckInterval = 60
         }
-        delegate.onUpdateCleared = { [weak self] in
-            self?.updateAvailable = false
-        }
+        #endif
+        // `didFindValidUpdate` only fires for *user-initiated* checks. Scheduled
+        // background checks route through the user-driver delegate instead, so
+        // we wire both paths to the same flag.
+        updaterDelegate.onUpdateFound = { [weak self] in self?.updateAvailable = true }
+        updaterDelegate.onUpdateCleared = { [weak self] in self?.updateAvailable = false }
+        userDriverDelegate.onUpdateFound = { [weak self] in self?.updateAvailable = true }
+        userDriverDelegate.onUpdateCleared = { [weak self] in self?.updateAvailable = false }
     }
 
     var updater: SPUUpdater { controller.updater }
@@ -73,7 +89,8 @@ final class Updater: ObservableObject {
     }
 }
 
-/// Bridges Sparkle delegate callbacks into closures Updater can observe.
+/// Receives callbacks for *user-initiated* checks (the "Check for Updates…"
+/// menu item / Settings button).
 private final class UpdaterDelegate: NSObject, SPUUpdaterDelegate {
     var onUpdateFound: (() -> Void)?
     var onUpdateCleared: (() -> Void)?
@@ -89,10 +106,34 @@ private final class UpdaterDelegate: NSObject, SPUUpdaterDelegate {
     func updater(_: SPUUpdater, didAbortWithError _: Error) {
         DispatchQueue.main.async { self.onUpdateCleared?() }
     }
+}
 
-    func updater(_: SPUUpdater, didFinishUpdateCycleFor _: SPUUpdateCheck, error _: Error?) {
-        // Left blank intentionally — state is driven by the more specific
-        // didFindValidUpdate / didNotFindUpdate callbacks above.
+/// Receives callbacks for *scheduled* (background) checks. Sparkle's daily
+/// auto-check runs through this path; without it, the toolbar icon would never
+/// appear unless the user manually triggered a check. We opt into "gentle
+/// reminders" so Sparkle defers UI to us, and we surface the update by
+/// flipping the toolbar flag instead of showing a modal alert.
+private final class UserDriverDelegate: NSObject, SPUStandardUserDriverDelegate, @unchecked Sendable {
+    nonisolated(unsafe) var onUpdateFound: (() -> Void)?
+    nonisolated(unsafe) var onUpdateCleared: (() -> Void)?
+
+    /// Tells Sparkle we'll handle showing the update ourselves rather than
+    /// letting the standard alert pop up unprompted. The `state` flag tells
+    /// us when Sparkle would otherwise show its alert; the toolbar icon is
+    /// our equivalent surface.
+    var supportsGentleScheduledUpdateReminders: Bool { true }
+
+    func standardUserDriverWillHandleShowingUpdate(
+        _: Bool,
+        forUpdate _: SUAppcastItem,
+        state: SPUUserUpdateState
+    ) {
+        guard state.stage == .notDownloaded || state.stage == .downloaded else { return }
+        Task { @MainActor [weak self] in self?.onUpdateFound?() }
+    }
+
+    func standardUserDriverWillFinishUpdateSession() {
+        Task { @MainActor [weak self] in self?.onUpdateCleared?() }
     }
 }
 
