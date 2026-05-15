@@ -5,8 +5,8 @@ import SwiftUI
 struct SettingsView: View {
     var body: some View {
         TabView {
-            AppearanceSettings()
-                .tabItem { Label("Appearance", systemImage: "paintbrush") }
+            GeneralSettings()
+                .tabItem { Label("General", systemImage: "gearshape") }
             QuickTerminalSettings()
                 .tabItem {
                     Label("Quick Terminal", systemImage: "rectangle.bottomthird.inset.filled")
@@ -20,9 +20,9 @@ struct SettingsView: View {
     }
 }
 
-// MARK: - Appearance
+// MARK: - General
 
-private struct AppearanceSettings: View {
+private struct GeneralSettings: View {
     @AppStorage(Preferences.Keys.autoTiling)
     private var autoTilingEnabled = false
     @State

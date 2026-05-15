@@ -159,7 +159,7 @@ A floating `NSPanel` that reuses the same `TerminalTab` / `SplitNode` / `Pane` m
 | --------------------- | ---------------------------------------------------------------------------------- |
 | `MactermConfig.swift` | Generates the two wrapper ghostty config files Macterm sandwiches around the user's |
 
-Macterm reads the user's `~/.config/ghostty/config` (path configurable in Settings → Appearance → Ghostty Config). The user is the source of truth for every ghostty setting — themes, fonts, palettes, keybinds, etc. `MactermConfig.regenerate()` writes two private files in App Support:
+Macterm reads the user's `~/.config/ghostty/config` (path configurable in Settings → General → Ghostty Config). The user is the source of truth for every ghostty setting — themes, fonts, palettes, keybinds, etc. `MactermConfig.regenerate()` writes two private files in App Support:
 
 - **`macterm-defaults.conf`** — first-launch tasteful defaults (Rose Pine, 16pt, padding, `macos-option-as-alt = true`). User's Ghostty config overrides each line.
 - **`macterm-overrides.conf`** — keys Macterm absolutely needs to lock. Currently just `background-opacity = 0` and `background-blur = 0` so ghostty renders fully transparent and `WindowAppearance` can composite translucency itself without double-tinting.

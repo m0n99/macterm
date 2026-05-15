@@ -43,7 +43,7 @@ xattr -cr /Applications/Macterm.app
 
 Macterm uses libghostty as its terminal engine and reads your existing `~/.config/ghostty/config` on launch. Themes, fonts, palettes, keybinds, scrollback, cursor style, shell integration, mouse behavior — everything Ghostty supports works the same in Macterm.
 
-If your config lives somewhere else, point Macterm at it in **Settings → Appearance → Ghostty Config**. Click **Reload** there after saving external edits — Macterm doesn't auto-detect them.
+If your config lives somewhere else, point Macterm at it in **Settings → General → Ghostty Config**. Click **Reload** there after saving external edits — Macterm doesn't auto-detect them.
 
 ### What's different from Ghostty.app
 
@@ -51,7 +51,7 @@ A handful of settings either don't apply or are overridden, because Macterm rend
 
 | Setting                                                         | Status          | Why                                                                                                                              |
 | --------------------------------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `background-opacity`                                            | Overridden to 0 | Macterm composites window translucency at the AppKit level. Use **Settings → Appearance → Window → Background Opacity** instead. |
+| `background-opacity`                                            | Overridden to 0 | Macterm composites window translucency at the AppKit level. Use **Settings → General → Window → Background Opacity** instead. |
 | `background-blur`                                               | Overridden to 0 | Same reason. Use the **Background Blur** slider in Settings.                                                                     |
 | `unfocused-split-opacity`                                       | Ignored         | Macterm draws its own dim overlay on unfocused panes.                                                                            |
 | `split-divider-color`                                           | Ignored         | Divider color comes from the theme's foreground.                                                                                 |
