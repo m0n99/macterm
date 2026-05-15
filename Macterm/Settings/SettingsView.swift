@@ -44,7 +44,7 @@ private struct GeneralSettings: View {
                     Button("Browse…") { browse() }
                     Button("Reload") {
                         commitPath()
-                        reloadAndReport()
+                        GhosttyApp.shared.reloadAndReport()
                     }
                     .help("Re-read your Ghostty config. Click after saving external edits.")
                 }
@@ -102,36 +102,11 @@ private struct GeneralSettings: View {
     /// Push the text-field's current value into Preferences and reload. We
     /// don't bind directly because that would reload on every keystroke;
     /// debouncing on submit/blur matches how the path is typically edited.
-    /// If the new path produces errors, the alert surfaces via the same
-    /// `reloadAndReport` path the Reload button uses.
+    /// If the new path produces errors, the alert surfaces via `reloadAndReport`.
     private func commitPath() {
         guard ghosttyConfigPath != Preferences.shared.userGhosttyConfigPath else { return }
         Preferences.shared.userGhosttyConfigPath = ghosttyConfigPath
-        reloadAndReport()
-    }
-
-    /// Trigger a libghostty config reload and surface any user-visible errors
-    /// (missing file, parse errors) as a modal alert. Silent on success.
-    private func reloadAndReport() {
-        let result = GhosttyApp.shared.reloadConfig()
-        var lines: [String] = []
-        if let missing = result.missingUserConfigPath {
-            lines.append("File not found: \(missing)")
-        }
-        if !result.diagnostics.isEmpty {
-            lines.append(contentsOf: result.diagnostics)
-        }
-        guard !lines.isEmpty else { return }
-
-        let alert = NSAlert()
-        alert.messageText =
-            result.missingUserConfigPath != nil
-                ? "Ghostty config not found"
-                : "Issues in your Ghostty config"
-        alert.informativeText = lines.joined(separator: "\n\n")
-        alert.alertStyle = result.missingUserConfigPath != nil ? .warning : .informational
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
+        GhosttyApp.shared.reloadAndReport()
     }
 
     private func browse() {

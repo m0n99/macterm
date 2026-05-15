@@ -94,6 +94,31 @@ final class GhosttyApp {
         return result
     }
 
+    /// Reload and surface any user-visible errors (missing file, parse errors)
+    /// as a modal alert. Silent on success. Used by both the Settings reload
+    /// button and the rebindable "Reload Ghostty config" hotkey.
+    func reloadAndReport() {
+        let result = reloadConfig()
+        var lines: [String] = []
+        if let missing = result.missingUserConfigPath {
+            lines.append("File not found: \(missing)")
+        }
+        if !result.diagnostics.isEmpty {
+            lines.append(contentsOf: result.diagnostics)
+        }
+        guard !lines.isEmpty else { return }
+
+        let alert = NSAlert()
+        alert.messageText =
+            result.missingUserConfigPath != nil
+                ? "Ghostty config not found"
+                : "Issues in your Ghostty config"
+        alert.informativeText = lines.joined(separator: "\n\n")
+        alert.alertStyle = result.missingUserConfigPath != nil ? .warning : .informational
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+
     var backgroundColor: NSColor { configColor("background") ?? NSColor(srgbRed: 0.11, green: 0.11, blue: 0.14, alpha: 1) }
     var foregroundColor: NSColor { configColor("foreground") ?? .white }
     var accentColor: NSColor { paletteColor(at: 4) ?? foregroundColor }

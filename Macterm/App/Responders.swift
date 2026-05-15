@@ -227,6 +227,11 @@ final class MainAppResponder: KeyResponder {
             return .handled
         }
 
+        if HotkeyRegistry.matches(event, action: .reloadGhosttyConfig) {
+            GhosttyApp.shared.reloadAndReport()
+            return .handled
+        }
+
         // Cmd+1-9 tab selection. Must check after the configurable hotkeys
         // so user bindings take precedence over digits.
         if flags == .command {

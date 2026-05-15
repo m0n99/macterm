@@ -135,6 +135,8 @@ struct CommandSource: PaletteSource {
             // needs to exist in AppCommand so Settings → Keymaps can show
             // and rebind its hotkey.
             return nil
+        case .reloadGhosttyConfig:
+            action = { GhosttyApp.shared.reloadAndReport() }
         }
 
         guard let action else { return nil }
