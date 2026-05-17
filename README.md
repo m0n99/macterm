@@ -39,6 +39,20 @@ Since the app isn't signed with an Apple Developer certificate, macOS will block
 xattr -cr /Applications/Macterm.app
 ```
 
+## Demos
+
+### Keybinds
+
+Macterm is very keyboard-oriented, so you can perform the majority of actions without lifting your hand.
+
+https://github.com/user-attachments/assets/42b2dce8-1d6d-41d6-a4c8-2e0c1339810b
+
+### Window Opacity & Blur
+
+Macterm's window appearance is highly customizable and hot-reloaded.
+
+https://github.com/user-attachments/assets/1486ed55-e653-43ce-98aa-232a61d234a7
+
 ## For Ghostty Users
 
 Macterm uses libghostty as its terminal engine and reads your existing `~/.config/ghostty/config` on launch. Themes, fonts, palettes, keybinds, scrollback, cursor style, shell integration, mouse behavior — everything Ghostty supports works the same in Macterm.
@@ -72,20 +86,6 @@ One caveat: Ghostty keybinds that drive _app-level_ actions (`new_split`, `new_t
 ### First-launch defaults
 
 If you don't have a `~/.config/ghostty/config`, Macterm starts with the Rose Pine theme at 16pt, 16px window padding, and `macos-option-as-alt = true` (so Option+letter sends Alt to your shell instead of typing special characters). Everything else falls through to Ghostty's own defaults. Any of these can be overridden by adding the corresponding line to your Ghostty config.
-
-## Demos
-
-### Keybinds
-
-Macterm is very keyboard-oriented, so you can perform the majority of actions without lifting your hand.
-
-https://github.com/user-attachments/assets/42b2dce8-1d6d-41d6-a4c8-2e0c1339810b
-
-### Window Opacity & Blur
-
-Macterm's window appearance is highly customizable and hot-reloaded.
-
-https://github.com/user-attachments/assets/1486ed55-e653-43ce-98aa-232a61d234a7
 
 ## Contributing
 
