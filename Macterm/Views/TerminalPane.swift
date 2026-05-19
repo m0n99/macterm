@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UserNotifications
 
 struct TerminalPane: View {
     let pane: Pane
@@ -134,5 +135,61 @@ private struct TerminalSurface: NSViewRepresentable {
         }
         view.onSearchTotal = { [weak pane] total in pane?.searchState.total = total }
         view.onSearchSelected = { [weak pane] sel in pane?.searchState.selected = sel }
+        view.onDesktopNotification = { [weak pane, weak view] title, body in
+            guard let pane else { return }
+            guard !(NSApp.isActive && view?.isFocused == true) else { return }
+            let content = UNMutableNotificationContent()
+            content.title = title
+            content.body = body
+            content.userInfo = [
+                "paneID": pane.id.uuidString,
+                "projectID": pane.projectID.uuidString,
+                "isQuickTerminal": pane.projectID == QuickTerminalService.projectID,
+            ]
+            let request = UNNotificationRequest(
+                identifier: "macterm-\(pane.id.uuidString)-\(Date().timeIntervalSince1970)",
+                content: content,
+                trigger: nil
+            )
+            UNUserNotificationCenter.current().add(request)
+        }
+        view.onCommandFinished = { [weak pane, weak view] exitCode, durationNs in
+            guard let pane else { return }
+            guard !(NSApp.isActive && view?.isFocused == true) else { return }
+            let durationSec = Double(durationNs) / 1_000_000_000
+            let body = if exitCode < 0 {
+                String(format: "Completed in %@", Self.formatDuration(durationSec))
+            } else {
+                String(format: "Exited with code %d (%@)", exitCode, Self.formatDuration(durationSec))
+            }
+            let content = UNMutableNotificationContent()
+            content.title = "Command Finished"
+            content.body = body
+            content.userInfo = [
+                "paneID": pane.id.uuidString,
+                "projectID": pane.projectID.uuidString,
+                "isQuickTerminal": pane.projectID == QuickTerminalService.projectID,
+            ]
+            let request = UNNotificationRequest(
+                identifier: "macterm-\(pane.id.uuidString)-\(Date().timeIntervalSince1970)",
+                content: content,
+                trigger: nil
+            )
+            UNUserNotificationCenter.current().add(request)
+        }
+    }
+
+    private static func formatDuration(_ seconds: Double) -> String {
+        if seconds < 60 {
+            return String(format: "%.1fs", seconds)
+        } else if seconds < 3600 {
+            let mins = Int(seconds) / 60
+            let secs = Int(seconds) % 60
+            return String(format: "%dm %ds", mins, secs)
+        } else {
+            let hours = Int(seconds) / 3600
+            let mins = (Int(seconds) % 3600) / 60
+            return String(format: "%dh %dm", hours, mins)
+        }
     }
 }

@@ -23,6 +23,8 @@ final class GhosttyTerminalNSView: NSView {
     var onSearchEnd: (() -> Void)?
     var onSearchTotal: ((Int?) -> Void)?
     var onSearchSelected: ((Int?) -> Void)?
+    var onDesktopNotification: ((String, String) -> Void)?
+    var onCommandFinished: ((Int16, UInt64) -> Void)?
     var isFocused: Bool = false
     var currentPwd: String?
 
