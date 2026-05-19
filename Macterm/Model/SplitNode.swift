@@ -46,6 +46,7 @@ final class Pane: Identifiable {
         view.onFocus = nil
         view.onSplitRequest = nil
         view.onDesktopNotification = nil
+        view.onCommandFinished = nil
         view.destroySurface()
         _nsView = nil
         // Keep the NSView alive for a runloop tick so any in-flight ghostty
