@@ -5,7 +5,7 @@
 </h1>
 
 <p align="center">
-  A lightweight, native terminal for macOS built with SwiftUI and libghostty.
+  A beautiful, native macOS terminal with vertical tabs
 </p>
 
 ![screenshot](./assets/screenshot.png)
@@ -63,15 +63,15 @@ If your config lives somewhere else, point Macterm at it in **Settings → Gener
 
 A handful of settings either don't apply or are overridden, because Macterm renders some of the chrome itself instead of letting Ghostty do it. If you have these in your Ghostty config, they'll be parsed without errors but won't change anything in Macterm:
 
-| Setting                                                         | Status          | Why                                                                                                                              |
-| --------------------------------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Setting                                                         | Status          | Why                                                                                                                           |
+| --------------------------------------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | `background-opacity`                                            | Overridden to 0 | Macterm composites window translucency at the AppKit level. Use **Settings → General → Window → Background Opacity** instead. |
-| `background-blur`                                               | Overridden to 0 | Same reason. Use the **Background Blur** slider in Settings.                                                                     |
-| `unfocused-split-opacity`                                       | Ignored         | Macterm draws its own dim overlay on unfocused panes.                                                                            |
-| `split-divider-color`                                           | Ignored         | Divider color comes from the theme's foreground.                                                                                 |
-| `window-padding-color`                                          | Ignored         | Padding follows the SwiftUI background stack.                                                                                    |
-| `macos-titlebar-*`, `macos-window-buttons`, `window-decoration` | Ignored         | Macterm has its own titlebar implementation.                                                                                     |
-| `quick-terminal-*` family                                       | Ignored         | Macterm has its own quick terminal. Size lives in **Settings → Quick Terminal**.                                                 |
+| `background-blur`                                               | Overridden to 0 | Same reason. Use the **Background Blur** slider in Settings.                                                                  |
+| `unfocused-split-opacity`                                       | Ignored         | Macterm draws its own dim overlay on unfocused panes.                                                                         |
+| `split-divider-color`                                           | Ignored         | Divider color comes from the theme's foreground.                                                                              |
+| `window-padding-color`                                          | Ignored         | Padding follows the SwiftUI background stack.                                                                                 |
+| `macos-titlebar-*`, `macos-window-buttons`, `window-decoration` | Ignored         | Macterm has its own titlebar implementation.                                                                                  |
+| `quick-terminal-*` family                                       | Ignored         | Macterm has its own quick terminal. Size lives in **Settings → Quick Terminal**.                                              |
 
 Macterm-specific settings (window opacity/blur, quick terminal dimensions, hotkeys, auto-tile) live in **Macterm → Settings**. Everything else belongs in your Ghostty config.
 
