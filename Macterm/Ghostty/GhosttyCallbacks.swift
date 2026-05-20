@@ -41,6 +41,16 @@ final class GhosttyCallbacks: @unchecked Sendable {
             DispatchQueue.main.async { view.currentPwd = pwd }
             return true
         case GHOSTTY_ACTION_DESKTOP_NOTIFICATION:
+            guard let view = surfaceView(from: target) else { return true }
+            let title = action.action.desktop_notification.title.flatMap { String(cString: $0) } ?? ""
+            let body = action.action.desktop_notification.body.flatMap { String(cString: $0) } ?? ""
+            DispatchQueue.main.async { view.onDesktopNotification?(title, body) }
+            return true
+        case GHOSTTY_ACTION_COMMAND_FINISHED:
+            guard let view = surfaceView(from: target) else { return true }
+            let exitCode = action.action.command_finished.exit_code
+            let duration = action.action.command_finished.duration
+            DispatchQueue.main.async { view.onCommandFinished?(exitCode, duration) }
             return true
         default:
             return false
