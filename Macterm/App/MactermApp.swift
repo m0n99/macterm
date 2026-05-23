@@ -57,10 +57,69 @@ struct MactermApp: App {
                     }
                 }
                 .keyboardShortcut("n", modifiers: .command)
+                Divider()
+                AppCommandMenuItem(command: .newTab, appState: appState, projectStore: projectStore, titleOverride: "New Tab")
+                AppCommandMenuItem(command: .openProject, appState: appState, projectStore: projectStore, titleOverride: "Open Project…")
             }
             CommandGroup(replacing: .toolbar) {}
             CommandGroup(after: .appInfo) {
                 CheckForUpdatesMenuItem()
+            }
+            CommandGroup(replacing: .saveItem) {
+                AppCommandMenuItem(command: .closePane, appState: appState, projectStore: projectStore, titleOverride: "Close Pane")
+                AppCommandMenuItem(command: .closeWindow, appState: appState, projectStore: projectStore, titleOverride: "Close Window")
+            }
+            CommandGroup(replacing: .sidebar) {
+                AppCommandMenuItem(command: .toggleSidebar, appState: appState, projectStore: projectStore, titleOverride: "Toggle Sidebar")
+                AppCommandMenuItem(
+                    command: .toggleCommandPalette,
+                    appState: appState,
+                    projectStore: projectStore,
+                    titleOverride: "Command Palette"
+                )
+                AppCommandMenuItem(
+                    command: .toggleQuickTerminal,
+                    appState: appState,
+                    projectStore: projectStore,
+                    titleOverride: "Quick Terminal"
+                )
+                Divider()
+                AppCommandMenuItem(
+                    command: .reloadGhosttyConfig,
+                    appState: appState,
+                    projectStore: projectStore,
+                    titleOverride: "Reload Ghostty Config"
+                )
+            }
+            CommandGroup(after: .windowList) {
+                Divider()
+                AppCommandMenuItem(command: .nextTab, appState: appState, projectStore: projectStore, titleOverride: "Next Tab")
+                AppCommandMenuItem(command: .previousTab, appState: appState, projectStore: projectStore, titleOverride: "Previous Tab")
+                AppCommandMenuItem(command: .recentTab, appState: appState, projectStore: projectStore, titleOverride: "Recent Tab")
+            }
+            CommandMenu("Project") {
+                AppCommandMenuItem(command: .openProject, appState: appState, projectStore: projectStore, titleOverride: "New Project…")
+                AppCommandMenuItem(
+                    command: .renameProject,
+                    appState: appState,
+                    projectStore: projectStore,
+                    titleOverride: "Rename Project…"
+                )
+                AppCommandMenuItem(command: .removeProject, appState: appState, projectStore: projectStore, titleOverride: "Remove Project")
+                AppCommandMenuItem(
+                    command: .replaceProjectPathWithCurrentDir,
+                    appState: appState,
+                    projectStore: projectStore,
+                    titleOverride: "Set Project Path to Current Directory"
+                )
+                Divider()
+                AppCommandMenuItem(command: .nextProject, appState: appState, projectStore: projectStore, titleOverride: "Next Project")
+                AppCommandMenuItem(
+                    command: .previousProject,
+                    appState: appState,
+                    projectStore: projectStore,
+                    titleOverride: "Previous Project"
+                )
             }
         }
 

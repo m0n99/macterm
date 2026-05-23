@@ -35,123 +35,23 @@ struct CommandSource: PaletteSource {
     /// doesn't apply in the current context (e.g. tab/pane commands when no
     /// project is active, rename/remove when there's no current project).
     private func make(command: AppCommand, ctx: PaletteContext) -> PaletteItem? {
-        let projectID = ctx.appState.activeProjectID
-        let current = projectID.flatMap { id in ctx.projectStore.projects.first(where: { $0.id == id }) }
+        // The palette has to be open to see itself; hide the entry.
+        if command == .toggleCommandPalette { return nil }
 
-        let action: (() -> Void)?
-        switch command {
-        // Tabs / panes — require an active project.
-        case .newTab:
-            guard let projectID else { return nil }
-            action = { ctx.appState.createTab(projectID: projectID, projects: ctx.projectStore.projects) }
-        case .closePane:
-            guard let projectID else { return nil }
-            action = {
-                if let pane = ctx.appState.focusedPane(for: projectID) {
-                    ctx.appState.requestClosePane(pane.id, projectID: projectID)
-                }
-            }
-        case .nextTab:
-            action = { ctx.appState.selectGlobalTab(.next, projects: ctx.projectStore.projects) }
-        case .previousTab:
-            action = { ctx.appState.selectGlobalTab(.previous, projects: ctx.projectStore.projects) }
-        case .recentTab:
-            guard let projectID else { return nil }
-            action = { ctx.appState.cycleRecentTab(projectID: projectID) }
-        case .renameTab:
-            guard let projectID,
-                  let tab = ctx.appState.workspaces[projectID]?.activeTab
-            else { return nil }
-            let tabID = tab.id
-            action = {
-                ctx.appState.postPaletteAction = {
-                    ctx.appState.sidebarVisible = true
-                    ctx.appState.renamingTabID = tabID
-                }
-            }
-        case .splitRight:
-            guard let projectID else { return nil }
-            action = { ctx.appState.splitPane(direction: .horizontal, projectID: projectID) }
-        case .splitDown:
-            guard let projectID else { return nil }
-            action = { ctx.appState.splitPane(direction: .vertical, projectID: projectID) }
-        case .zoomPane:
-            guard let projectID else { return nil }
-            action = { ctx.appState.toggleZoom(projectID: projectID) }
-        case .focusLeft:
-            guard let projectID else { return nil }
-            action = { ctx.appState.focusPaneInDirection(.left, projectID: projectID) }
-        case .focusRight:
-            guard let projectID else { return nil }
-            action = { ctx.appState.focusPaneInDirection(.right, projectID: projectID) }
-        case .focusUp:
-            guard let projectID else { return nil }
-            action = { ctx.appState.focusPaneInDirection(.up, projectID: projectID) }
-        case .focusDown:
-            guard let projectID else { return nil }
-            action = { ctx.appState.focusPaneInDirection(.down, projectID: projectID) }
-        case .resizeLeft:
-            guard let projectID else { return nil }
-            action = { ctx.appState.resizePane(.left, projectID: projectID) }
-        case .resizeRight:
-            guard let projectID else { return nil }
-            action = { ctx.appState.resizePane(.right, projectID: projectID) }
-        case .resizeUp:
-            guard let projectID else { return nil }
-            action = { ctx.appState.resizePane(.up, projectID: projectID) }
-        case .resizeDown:
-            guard let projectID else { return nil }
-            action = { ctx.appState.resizePane(.down, projectID: projectID) }
-        // Projects.
-        case .openProject:
-            action = { _ = ctx.appState.openProject(store: ctx.projectStore) }
-        case .renameProject:
-            guard let current else { return nil }
-            let projectID = current.id
-            action = {
-                ctx.appState.postPaletteAction = {
-                    ctx.appState.sidebarVisible = true
-                    ctx.appState.renamingProjectID = projectID
-                }
-            }
-        case .removeProject:
-            guard let projectID else { return nil }
-            action = {
-                ctx.appState.removeProject(projectID)
-                ctx.projectStore.remove(id: projectID)
-            }
-        case .replaceProjectPathWithCurrentDir:
-            // Only meaningful when there's an active project AND the focused
-            // pane's pwd differs from the project's current path. Hiding the
-            // entry otherwise keeps the palette uncluttered.
-            guard let projectID,
-                  let pane = ctx.appState.focusedPane(for: projectID),
-                  let pwd = pane.nsView?.currentPwd, !pwd.isEmpty,
-                  current?.path != pwd
-            else { return nil }
-            action = { ctx.appState.replaceProjectPathWithCurrentDir(projectStore: ctx.projectStore) }
-        case .nextProject:
-            action = { ctx.appState.selectNextProject(projects: ctx.projectStore.projects) }
-        case .previousProject:
-            action = { ctx.appState.selectPreviousProject(projects: ctx.projectStore.projects) }
-        // Window.
-        case .toggleSidebar:
-            action = { ctx.appState.sidebarVisible.toggle() }
-        case .closeWindow:
-            action = { (NSApp.delegate as? AppDelegate)?.mainWindow?.orderOut(nil) }
-        case .toggleCommandPalette:
-            // No palette entry for opening the palette — by definition the
-            // palette has to already be open to see it. The action still
-            // needs to exist in AppCommand so Settings → Keymaps can show
-            // and rebind its hotkey.
-            return nil
-        case .reloadGhosttyConfig:
-            action = { GhosttyApp.shared.reloadAndReport() }
-        case .toggleQuickTerminal:
-            action = { QuickTerminalService.shared.toggle() }
+        let commandCtx = AppCommandContext(appState: ctx.appState, projectStore: ctx.projectStore)
+        guard let rawAction = command.action(in: commandCtx) else { return nil }
+
+        // Rename actions need to wait until the palette has dismissed so the
+        // textfield in the sidebar can take first responder. Defer via
+        // postPaletteAction; CommandPaletteOverlay fires it on close.
+        let action: () -> Void = switch command {
+        case .renameTab,
+             .renameProject:
+            { ctx.appState.postPaletteAction = rawAction }
+        default:
+            rawAction
         }
 
-        guard let action else { return nil }
         return PaletteItem(
             title: command.title,
             category: command.category.rawValue,
