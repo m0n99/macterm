@@ -69,6 +69,10 @@ run = """
 description = "Clean build artifacts"
 run = "rm -rf .build build Macterm.xcodeproj"
 
+[tasks.stats]
+description = "Show download statistics"
+run = "scripts/stats.sh"
+
 # ─── CI tasks (raw logs, no spinner) ────────────────────────────────────────
 # CI uses these so failures show full output inline. Each one is a thin
 # wrapper that calls the same underlying script directly.
