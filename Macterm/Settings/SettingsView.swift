@@ -25,6 +25,12 @@ struct SettingsView: View {
 private struct GeneralSettings: View {
     @AppStorage(Preferences.Keys.autoTiling)
     private var autoTilingEnabled = false
+    @AppStorage(Preferences.Keys.projectIconSymbol)
+    private var projectIconSymbol = "folder"
+    @AppStorage(Preferences.Keys.tabIconSymbol)
+    private var tabIconSymbol = "terminal"
+    @AppStorage(Preferences.Keys.showNewProjectButton)
+    private var showNewProjectButton = true
     @State
     private var ghosttyConfigPath: String = Preferences.shared.userGhosttyConfigPath
     @State
@@ -95,8 +101,50 @@ private struct GeneralSettings: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
+
+            Section("Sidebar") {
+                Picker("Project icon", selection: $projectIconSymbol) {
+                    ForEach(Preferences.projectIconChoices, id: \.self) { name in
+                        iconPickerLabel(name).tag(name)
+                    }
+                }
+                .onChange(of: projectIconSymbol) { _, v in Preferences.shared.projectIconSymbol = v }
+
+                Picker("Tab icon", selection: $tabIconSymbol) {
+                    ForEach(Preferences.tabIconChoices, id: \.self) { name in
+                        iconPickerLabel(name).tag(name)
+                    }
+                }
+                .onChange(of: tabIconSymbol) { _, v in Preferences.shared.tabIconSymbol = v }
+
+                Toggle("Show New Project button", isOn: $showNewProjectButton)
+                    .onChange(of: showNewProjectButton) { _, v in Preferences.shared.showNewProjectButton = v }
+                Text("When hidden, create projects via the command palette or context menu.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
+    }
+
+    @ViewBuilder
+    private func iconPickerLabel(_ name: String) -> some View {
+        switch name {
+        case Preferences.noIcon:
+            Text("None")
+        case Preferences.numberIconCircleFill:
+            Label("Number — filled circle", systemImage: "1.circle.fill")
+        case Preferences.numberIconCircle:
+            Label("Number — circle", systemImage: "1.circle")
+        case Preferences.numberIconSquareFill:
+            Label("Number — filled square", systemImage: "1.square.fill")
+        case Preferences.numberIconSquare:
+            Label("Number — square", systemImage: "1.square")
+        case Preferences.numberIconPlain:
+            Text("Number")
+        default:
+            Label(name, systemImage: name)
+        }
     }
 
     /// Push the text-field's current value into Preferences and reload. We

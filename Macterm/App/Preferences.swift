@@ -22,6 +22,68 @@ final class Preferences {
         }
     }
 
+    // MARK: - Sidebar icons
+
+    var projectIconSymbol: String {
+        didSet { defaults.set(projectIconSymbol, forKey: Keys.projectIconSymbol) }
+    }
+
+    var tabIconSymbol: String {
+        didSet { defaults.set(tabIconSymbol, forKey: Keys.tabIconSymbol) }
+    }
+
+    var showNewProjectButton: Bool {
+        didSet { defaults.set(showNewProjectButton, forKey: Keys.showNewProjectButton) }
+    }
+
+    /// Sentinel for "no icon" — sidebar rows skip the leading glyph when set.
+    static let noIcon = "none"
+    /// Sentinels for "show 1-based top-down position" — sidebar rows render a number glyph.
+    /// Each variant picks a different SF Symbols container (or plain text) around the digit.
+    static let numberIconCircleFill = "number.circle.fill"
+    static let numberIconCircle = "number.circle"
+    static let numberIconSquareFill = "number.square.fill"
+    static let numberIconSquare = "number.square"
+    static let numberIconPlain = "number.plain"
+
+    static let numberIconChoices: Set<String> = [
+        numberIconCircleFill,
+        numberIconCircle,
+        numberIconSquareFill,
+        numberIconSquare,
+        numberIconPlain,
+    ]
+
+    /// Curated SF Symbols offered in Settings — keeps users from typing invalid names.
+    static let projectIconChoices: [String] = [
+        noIcon,
+        numberIconCircleFill,
+        numberIconCircle,
+        numberIconSquareFill,
+        numberIconSquare,
+        numberIconPlain,
+        "folder",
+        "folder.fill",
+        "briefcase",
+        "shippingbox",
+        "cube",
+        "hammer",
+    ]
+    static let tabIconChoices: [String] = [
+        noIcon,
+        numberIconCircleFill,
+        numberIconCircle,
+        numberIconSquareFill,
+        numberIconSquare,
+        numberIconPlain,
+        "terminal",
+        "chevron.right",
+        "chevron.compact.right",
+        "circle.fill",
+        "circle",
+        "command",
+    ]
+
     // MARK: - Window
 
     /// Macterm-painted window background opacity (0–1). Independent from
@@ -111,6 +173,9 @@ final class Preferences {
         quickTerminalWidthFraction = Self.clampFraction(defaults.double(forKey: Keys.quickTerminalWidth), fallback: 0.6)
         quickTerminalHeightFraction = Self.clampFraction(defaults.double(forKey: Keys.quickTerminalHeight), fallback: 0.5)
         activeProjectID = (defaults.string(forKey: Keys.activeProjectID)).flatMap(UUID.init)
+        projectIconSymbol = defaults.string(forKey: Keys.projectIconSymbol) ?? "folder"
+        tabIconSymbol = defaults.string(forKey: Keys.tabIconSymbol) ?? "terminal"
+        showNewProjectButton = defaults.object(forKey: Keys.showNewProjectButton) as? Bool ?? true
         Self.runOneTimeMigrations(defaults: defaults)
     }
 
@@ -125,12 +190,19 @@ final class Preferences {
     /// and there's no risk of resurrecting the old values if someone wires
     /// them back up later.
     private static func runOneTimeMigrations(defaults: UserDefaults) {
-        guard !defaults.bool(forKey: Keys.migrationV2GhosttyConfigOwned) else { return }
-        defaults.removeObject(forKey: "macterm.appearance.theme")
-        defaults.removeObject(forKey: "macterm.appearance.fontFamily")
-        defaults.removeObject(forKey: "macterm.appearance.fontSize")
-        defaults.removeObject(forKey: "macterm.input.optionAsAlt")
-        defaults.set(true, forKey: Keys.migrationV2GhosttyConfigOwned)
+        if !defaults.bool(forKey: Keys.migrationV2GhosttyConfigOwned) {
+            defaults.removeObject(forKey: "macterm.appearance.theme")
+            defaults.removeObject(forKey: "macterm.appearance.fontFamily")
+            defaults.removeObject(forKey: "macterm.appearance.fontSize")
+            defaults.removeObject(forKey: "macterm.input.optionAsAlt")
+            defaults.set(true, forKey: Keys.migrationV2GhosttyConfigOwned)
+        }
+        // The original "number" sentinel was replaced by per-variant tokens.
+        // Map any user who was on it to the filled-circle variant so their
+        // sidebar doesn't silently lose its number icons on upgrade.
+        for key in [Keys.projectIconSymbol, Keys.tabIconSymbol] where defaults.string(forKey: key) == "number" {
+            defaults.set(numberIconCircleFill, forKey: key)
+        }
     }
 
     // MARK: - UserDefaults keys
@@ -144,6 +216,9 @@ final class Preferences {
         static let quickTerminalWidth = "macterm.quickTerminal.width"
         static let quickTerminalHeight = "macterm.quickTerminal.height"
         static let activeProjectID = "macterm.activeProjectID"
+        static let projectIconSymbol = "macterm.sidebar.projectIcon"
+        static let tabIconSymbol = "macterm.sidebar.tabIcon"
+        static let showNewProjectButton = "macterm.sidebar.showNewProjectButton"
         static let migrationV2GhosttyConfigOwned = "macterm.migration.v2_ghostty_config_owned"
     }
 }

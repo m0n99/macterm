@@ -10,6 +10,8 @@ struct SidebarContent: View {
     private var appState
     @Environment(ProjectStore.self)
     private var projectStore
+    @AppStorage(Preferences.Keys.showNewProjectButton)
+    private var showNewProjectButton = true
     @State
     private var expandedProjects: Set<UUID> = []
     @State
@@ -17,7 +19,7 @@ struct SidebarContent: View {
 
     var body: some View {
         List(selection: $selection) {
-            ForEach(projectStore.projects) { project in
+            ForEach(Array(projectStore.projects.enumerated()), id: \.element.id) { projectIndex, project in
                 let ws = appState.workspaces[project.id]
                 let tabs = ws?.tabs ?? []
 
@@ -25,8 +27,8 @@ struct SidebarContent: View {
                     get: { expandedProjects.contains(project.id) },
                     set: { if $0 { expandedProjects.insert(project.id) } else { expandedProjects.remove(project.id) } }
                 )) {
-                    ForEach(tabs) { tab in
-                        SidebarTabRow(tab: tab) {
+                    ForEach(Array(tabs.enumerated()), id: \.element.id) { tabIndex, tab in
+                        SidebarTabRow(tab: tab, index: tabIndex + 1) {
                             appState.closeTab(tab.id, projectID: project.id)
                         } onRename: { newName in
                             tab.customTitle = newName.isEmpty ? nil : newName
@@ -39,7 +41,7 @@ struct SidebarContent: View {
                         appState.saveWorkspaces()
                     }
                 } label: {
-                    SidebarProjectRow(project: project) {
+                    SidebarProjectRow(project: project, index: projectIndex + 1) {
                         appState.selectProject(project)
                         appState.createTab(projectID: project.id, projectPath: project.path)
                         expandedProjects.insert(project.id)
@@ -64,15 +66,23 @@ struct SidebarContent: View {
         // another tinted layer here would make the sidebar read darker than
         // the surrounding strip.
         .safeAreaInset(edge: .bottom) {
-            Button {
-                openProject()
-            } label: {
-                Label("New Project", systemImage: "plus")
-                    .frame(maxWidth: .infinity)
+            if showNewProjectButton {
+                VStack(spacing: 0) {
+                    Divider()
+                    HStack(spacing: 0) {
+                        Button {
+                            openProject()
+                        } label: {
+                            Label("New Project", systemImage: "plus")
+                                .font(.body)
+                        }
+                        .buttonStyle(.borderless)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                }
             }
-            .controlSize(.large)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
         }
         .onChange(of: selection) { _, item in
             guard let item else { return }
@@ -126,11 +136,14 @@ struct SidebarContent: View {
 
 private struct SidebarProjectRow: View {
     let project: Project
+    let index: Int
     let onNewTab: () -> Void
     let onRename: (String) -> Void
     let onRemove: () -> Void
     @Environment(AppState.self)
     private var appState
+    @AppStorage(Preferences.Keys.projectIconSymbol)
+    private var projectIconSymbol = "folder"
     @State
     private var isRenaming = false
     @State
@@ -138,21 +151,33 @@ private struct SidebarProjectRow: View {
     @FocusState
     private var focused: Bool
 
+    @ViewBuilder
+    private var titleContent: some View {
+        if isRenaming {
+            TextField("", text: $renameText)
+                .textFieldStyle(.plain)
+                .focused($focused)
+                .onSubmit { commit() }
+                .onExitCommand { cancelRename() }
+                .onAppear { focused = true }
+        } else {
+            Text(project.name)
+                .lineLimit(1)
+        }
+    }
+
     var body: some View {
-        Label {
-            if isRenaming {
-                TextField("", text: $renameText)
-                    .textFieldStyle(.plain)
-                    .focused($focused)
-                    .onSubmit { commit() }
-                    .onExitCommand { cancelRename() }
-                    .onAppear { focused = true }
+        Group {
+            if projectIconSymbol == Preferences.noIcon {
+                titleContent
+                    .padding(.leading, 6)
             } else {
-                Text(project.name)
-                    .lineLimit(1)
+                Label {
+                    titleContent
+                } icon: {
+                    SidebarRowIcon(symbol: projectIconSymbol, index: index)
+                }
             }
-        } icon: {
-            Image(systemName: "folder.fill")
         }
         .contextMenu {
             Button("New Tab", action: onNewTab)
@@ -191,10 +216,13 @@ private struct SidebarProjectRow: View {
 
 private struct SidebarTabRow: View {
     let tab: TerminalTab
+    let index: Int
     let onClose: () -> Void
     let onRename: (String) -> Void
     @Environment(AppState.self)
     private var appState
+    @AppStorage(Preferences.Keys.tabIconSymbol)
+    private var tabIconSymbol = "terminal"
     @State
     private var isRenaming = false
     @State
@@ -204,21 +232,34 @@ private struct SidebarTabRow: View {
     @FocusState
     private var focused: Bool
 
+    @ViewBuilder
+    private var titleContent: some View {
+        if isRenaming {
+            TextField(tab.autoTitle, text: $renameText)
+                .textFieldStyle(.plain)
+                .focused($focused)
+                .onSubmit { commit() }
+                .onExitCommand { cancelRename() }
+                .onAppear { focused = true }
+        } else {
+            Text(tab.sidebarTitle)
+                .lineLimit(1)
+        }
+    }
+
     var body: some View {
-        Label {
-            if isRenaming {
-                TextField(tab.autoTitle, text: $renameText)
-                    .textFieldStyle(.plain)
-                    .focused($focused)
-                    .onSubmit { commit() }
-                    .onExitCommand { cancelRename() }
-                    .onAppear { focused = true }
+        Group {
+            if tabIconSymbol == Preferences.noIcon {
+                titleContent
+                    .padding(.leading, 6)
             } else {
-                Text(tab.sidebarTitle)
-                    .lineLimit(1)
+                Label {
+                    titleContent
+                } icon: {
+                    SidebarRowIcon(symbol: tabIconSymbol, index: index)
+                        .foregroundStyle(.secondary)
+                }
             }
-        } icon: {
-            Image(systemName: "terminal")
         }
         .contextMenu {
             Button("Rename Tab") { beginRename() }
@@ -250,5 +291,49 @@ private struct SidebarTabRow: View {
     private func cancelRename() {
         isRenaming = false
         appState.restoreFocusToActivePane()
+    }
+}
+
+private struct SidebarRowIcon: View {
+    let symbol: String
+    let index: Int
+
+    var body: some View {
+        if Preferences.numberIconChoices.contains(symbol) {
+            NumberGlyph(index: index, variant: symbol)
+        } else {
+            Image(systemName: symbol)
+        }
+    }
+}
+
+private struct NumberGlyph: View {
+    let index: Int
+    let variant: String
+
+    var body: some View {
+        if variant == Preferences.numberIconPlain {
+            Text("\(index)")
+                .font(.body.monospacedDigit())
+        } else if let suffix = shapeSuffix, (1 ... 50).contains(index) {
+            // SF Symbols ships `1.<shape>` through `50.<shape>`; beyond that,
+            // fall back to plain digits so we don't render a missing glyph.
+            Image(systemName: "\(index).\(suffix)")
+        } else {
+            Text("\(index)")
+                .font(.body.monospacedDigit())
+        }
+    }
+
+    /// Maps the sentinel token (e.g. `number.circle.fill`) to the suffix used
+    /// by the indexed SF Symbol (e.g. `circle.fill` in `1.circle.fill`).
+    private var shapeSuffix: String? {
+        switch variant {
+        case Preferences.numberIconCircleFill: "circle.fill"
+        case Preferences.numberIconCircle: "circle"
+        case Preferences.numberIconSquareFill: "square.fill"
+        case Preferences.numberIconSquare: "square"
+        default: nil
+        }
     }
 }
